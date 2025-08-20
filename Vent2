@@ -1,0 +1,109 @@
+import React, { useState } from "react"; import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+
+// Simple emotion detector (toy version) const detectEmotion = (text) => { if (text.includes("angry") || text.includes("never")) return "Anger"; if (text.includes("sad") || text.includes("lonely")) return "Sadness"; if (text.includes("love") || text.includes("appreciate")) return "Love"; return "Neutral"; };
+
+// Mediator tips based on emotion const getMediatorTip = (emotion) => { switch (emotion) { case "Anger": return "Try focusing on what you need, not just what frustrates you."; case "Sadness": return "It may help to express what kind of comfort or support you’d like."; case "Love": return "Consider sharing this affection more often — it strengthens bonds."; default: return "Keep communicating clearly."; } };
+
+// Refiner function (simplifies raw text) const refineMessage = (text, emotion) => { switch (emotion) { case "Anger": return "I feel frustrated and want us to listen to each other better."; case "Sadness": return "I feel low and need reassurance and connection."; case "Love": return "I appreciate you and value what we share."; default: return text; } };
+
+export default function MediatorApp() { const [messages, setMessages] = useState([]); const [inputA, setInputA] = useState(""); const [inputB, setInputB] = useState(""); const [coachingLogA, setCoachingLogA] = useState([]); const [coachingLogB, setCoachingLogB] = useState([]); const [showLogA, setShowLogA] = useState(false); const [showLogB, setShowLogB] = useState(false);
+
+const handleSend = (sender, text) => { const emotion = detectEmotion(text); const refined = refineMessage(text, emotion); const tip = getMediatorTip(emotion); const time = new Date().toLocaleTimeString();
+
+// Add to shared messages
+setMessages([
+  ...messages,
+  { sender, raw: text, refined, emotion, time }
+]);
+
+// Add private tip
+if (sender === "A") {
+  setCoachingLogA([...coachingLogA, { emotion, tip, time }]);
+} else {
+  setCoachingLogB([...coachingLogB, { emotion, tip, time }]);
+}
+
+};
+
+// Prepare data for chart const chartData = messages.map((m, i) => ({ index: i + 1, A: m.sender === "A" ? m.emotion : null, B: m.sender === "B" ? m.emotion : null, }));
+
+return ( <div className="p-6 grid grid-cols-2 gap-4"> {/* Partner A */} <div className="bg-white p-4 rounded-2xl shadow"> <h2 className="text-xl font-bold mb-2">Partner A</h2> <input className="border p-2 w-full mb-2" value={inputA} onChange={(e) => setInputA(e.target.value)} placeholder="Vent here..." /> <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => { handleSend("A", inputA); setInputA(""); }} > Send </button> <button className="ml-2 text-sm text-gray-600 underline" onClick={() => setShowLogA(!showLogA)} > {showLogA ? "Hide" : "Show"} Coaching Log </button>
+
+{showLogA && (
+      <div className="mt-2 p-2 bg-gray-100 rounded">
+        <h3 className="font-semibold mb-1">🧠 Coaching Log (Private)</h3>
+        {coachingLogA.map((entry, i) => (
+          <div key={i} className="mb-2">
+            <p>[{entry.time}] Emotion: {entry.emotion}</p>
+            <p className="text-sm text-gray-700">Tip: {entry.tip}</p>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+
+  {/* Partner B */}
+  <div className="bg-white p-4 rounded-2xl shadow">
+    <h2 className="text-xl font-bold mb-2">Partner B</h2>
+    <input
+      className="border p-2 w-full mb-2"
+      value={inputB}
+      onChange={(e) => setInputB(e.target.value)}
+      placeholder="Vent here..."
+    />
+    <button
+      className="bg-green-500 text-white px-4 py-2 rounded"
+      onClick={() => {
+        handleSend("B", inputB);
+        setInputB("");
+      }}
+    >
+      Send
+    </button>
+    <button
+      className="ml-2 text-sm text-gray-600 underline"
+      onClick={() => setShowLogB(!showLogB)}
+    >
+      {showLogB ? "Hide" : "Show"} Coaching Log
+    </button>
+
+    {showLogB && (
+      <div className="mt-2 p-2 bg-gray-100 rounded">
+        <h3 className="font-semibold mb-1">🧠 Coaching Log (Private)</h3>
+        {coachingLogB.map((entry, i) => (
+          <div key={i} className="mb-2">
+            <p>[{entry.time}] Emotion: {entry.emotion}</p>
+            <p className="text-sm text-gray-700">Tip: {entry.tip}</p>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+
+  {/* Shared conversation */}
+  <div className="col-span-2 bg-gray-50 p-4 rounded-2xl shadow mt-4">
+    <h2 className="text-lg font-bold mb-2">Conversation (Refined)</h2>
+    {messages.map((m, i) => (
+      <div key={i} className="mb-2">
+        <strong>{m.sender}:</strong> {m.refined} <span>({m.emotion})</span>
+      </div>
+    ))}
+  </div>
+
+  {/* Emotion trend chart */}
+  <div className="col-span-2 bg-white p-4 rounded-2xl shadow">
+    <h2 className="text-lg font-bold mb-2">Emotion Trends</h2>
+    <LineChart width={500} height={300} data={chartData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="index" />
+      <YAxis />
+      <Tooltip />
+      <Legend />
+      <Line type="monotone" dataKey="A" stroke="#8884d8" />
+      <Line type="monotone" dataKey="B" stroke="#82ca9d" />
+    </LineChart>
+  </div>
+</div>
+
+); }
+
